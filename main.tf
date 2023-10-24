@@ -1,35 +1,49 @@
-resource "google_container_cluster" "primary" {
-  name                     = "my-gke-cluster"
-  location                 = "europe-west4-a"
-  network                  = google_compute_network.vpc.name
-  subnetwork               = google_compute_subnetwork.subnet.name
-  remove_default_node_pool = true                ## create the smallest possible default node pool and immediately delete it.
-  # networking_mode          = "VPC_NATIVE" 
-  initial_node_count       = 1
-  
-  private_cluster_config {
-    enable_private_endpoint = false
-    enable_private_nodes   = false 
-  }
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
 
-  ip_allocation_policy {
-    cluster_ipv4_cidr_block  = "10.11.0.0/21"
-    services_ipv4_cidr_block = "10.12.0.0/21"
-  }
-
-  master_authorized_networks_config {
-    cidr_blocks {
-      cidr_block   = "10.0.0.7/32"
-      display_name = "net1"
-    }
-  }
+variable "gke_username" {
+  default     = ""
+  description = "gke username"
 }
 
+variable "gke_password" {
+  default     = ""
+  description = "gke password"
+}
+
+variable "gke_num_nodes" {
+  default     = 2
+  description = "number of gke nodes"
+}
+
+# GKE cluster
+data "google_container_engine_versions" "gke_version" {
+  location = var.region
+  version_prefix = "1.27."
+}
+
+resource "google_container_cluster" "primary" {
+  name     = "${var.project_id}-gke"
+  location = var.region
+
+  # We can't create a cluster with no node pool defined, but we want to only use
+  # separately managed node pools. So we create the smallest possible default
+  # node pool and immediately delete it.
+  remove_default_node_pool = true
+  initial_node_count       = 1
+
+  network    = google_compute_network.vpc.name
+  subnetwork = google_compute_subnetwork.subnet.name
+}
+
+# Separately Managed Node Pool
 resource "google_container_node_pool" "primary_nodes" {
   name       = google_container_cluster.primary.name
-  location   = "europe-west4-a"
+  location   = var.region
   cluster    = google_container_cluster.primary.name
-  node_count = 3
+  
+  version = data.google_container_engine_versions.gke_version.release_channel_latest_version["STABLE"]
+  node_count = var.gke_num_nodes
 
   node_config {
     oauth_scopes = [
@@ -38,13 +52,12 @@ resource "google_container_node_pool" "primary_nodes" {
     ]
 
     labels = {
-      env = "dev"
+      env = var.project_id
     }
 
+    # preemptible  = true
     machine_type = "n1-standard-1"
-    preemptible  = true
-    #service_account = google_service_account.mysa.email
-
+    tags         = ["gke-node", "${var.project_id}-gke"]
     metadata = {
       disable-legacy-endpoints = "true"
     }
