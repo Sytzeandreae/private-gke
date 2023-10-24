@@ -1,6 +1,6 @@
 resource "google_container_cluster" "primary" {
   name                     = "my-gke-cluster"
-  location                 = "asia-south2-a"
+  location                 = "europe-west4-a"
   network                  = google_compute_network.vpc.name
   subnetwork               = google_compute_subnetwork.subnet.name
   remove_default_node_pool = true                ## create the smallest possible default node pool and immediately delete it.
@@ -16,7 +16,7 @@ resource "google_container_cluster" "primary" {
     cluster_ipv4_cidr_block  = "10.11.0.0/21"
     services_ipv4_cidr_block = "10.12.0.0/21"
   }
-  
+
   master_authorized_networks_config {
     cidr_blocks {
       cidr_block   = "10.0.0.7/32"
@@ -27,7 +27,7 @@ resource "google_container_cluster" "primary" {
 
 resource "google_container_node_pool" "primary_nodes" {
   name       = google_container_cluster.primary.name
-  location   = "asia-south2-a"
+  location   = "europe-west4-a"
   cluster    = google_container_cluster.primary.name
   node_count = 3
 
