@@ -9,4 +9,5 @@ terraform {
 
 provider "google" {
   credentials = "./gcp.json"
+  project = var.project_id
 }

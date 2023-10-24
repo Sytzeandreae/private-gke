@@ -18,6 +18,7 @@ variable "gke_num_nodes" {
 
 # GKE cluster
 data "google_container_engine_versions" "gke_version" {
+  project = var.project_id
   location = var.region
   version_prefix = "1.27."
 }
