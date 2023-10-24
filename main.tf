@@ -10,12 +10,13 @@ resource "google_container_cluster" "primary" {
   private_cluster_config {
     enable_private_endpoint = false
     enable_private_nodes   = false 
-    master_ipv4_cidr_block = "10.13.0.0/28"
   }
+
   ip_allocation_policy {
     cluster_ipv4_cidr_block  = "10.11.0.0/21"
     services_ipv4_cidr_block = "10.12.0.0/21"
   }
+  
   master_authorized_networks_config {
     cidr_blocks {
       cidr_block   = "10.0.0.7/32"
